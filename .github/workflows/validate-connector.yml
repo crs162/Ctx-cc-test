@@ -1,0 +1,192 @@
+name: Validate Citrix Cloud Connector
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloud_connector_hostname:
+        description: 'Cloud Connector hostname to validate'
+        required: true
+        type: string
+      certificate_thumbprint:
+        description: 'Certificate thumbprint to verify'
+        required: true
+        type: string
+      citrix_customer_id:
+        description: 'Citrix Cloud Customer ID'
+        required: true
+        type: string
+  
+  schedule:
+    # Run validation daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  validate-cloud-connector:
+    name: Validate Citrix Cloud Connector
+    runs-on: windows-2022
+    timeout-minutes: 15
+    
+    env:
+      SCRIPT_PATH: ${{ github.workspace }}\scripts\Validate-CitrixCloudConnector.ps1
+      LOG_DIR: ${{ github.workspace }}\logs
+      ARTIFACT_DIR: ${{ github.workspace }}\artifacts
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PowerShell
+        shell: pwsh
+        run: |
+          Write-Host "PowerShell Version: $($PSVersionTable.PSVersion)" -ForegroundColor Cyan
+          Write-Host "Operating System: $($PSVersionTable.OS)" -ForegroundColor Cyan
+          Write-Host "Execution Policy:"
+          Get-ExecutionPolicy -List
+
+      - name: Prepare directories
+        shell: pwsh
+        run: |
+          $logDir = "${{ env.LOG_DIR }}"
+          $artifactDir = "${{ env.ARTIFACT_DIR }}"
+          
+          foreach ($dir in @($logDir, $artifactDir)) {
+              if (-not (Test-Path $dir)) {
+                  New-Item -ItemType Directory -Path $dir -Force | Out-Null
+                  Write-Host "Created directory: $dir" -ForegroundColor Green
+              }
+          }
+
+      - name: Validate parameters
+        shell: pwsh
+        run: |
+          $errors = @()
+          
+          # For scheduled runs, use environment variables or defaults
+          $hostname = "${{ github.event.inputs.cloud_connector_hostname }}" -ne '' ? `
+              "${{ github.event.inputs.cloud_connector_hostname }}" : `
+              "${{ secrets.DEFAULT_CLOUD_CONNECTOR_HOSTNAME }}"
+          
+          $thumbprint = "${{ github.event.inputs.certificate_thumbprint }}" -ne '' ? `
+              "${{ github.event.inputs.certificate_thumbprint }}" : `
+              "${{ secrets.DEFAULT_CERTIFICATE_THUMBPRINT }}"
+          
+          $customerId = "${{ github.event.inputs.citrix_customer_id }}" -ne '' ? `
+              "${{ github.event.inputs.citrix_customer_id }}" : `
+              "${{ secrets.CITRIX_CUSTOMER_ID }}"
+          
+          if ([string]::IsNullOrWhiteSpace($hostname)) {
+              $errors += "Cloud Connector hostname not provided"
+          }
+          if ([string]::IsNullOrWhiteSpace($thumbprint)) {
+              $errors += "Certificate thumbprint not provided"
+          }
+          if ([string]::IsNullOrWhiteSpace($customerId)) {
+              $errors += "Citrix Customer ID not provided"
+          }
+          
+          if ($errors.Count -gt 0) {
+              Write-Host "Parameter validation failed:" -ForegroundColor Red
+              $errors | ForEach-Object { Write-Host "  ❌ $_" -ForegroundColor Red }
+              exit 1
+          }
+          
+          Write-Host "✅ All required parameters validated" -ForegroundColor Green
+          
+          # Save for next steps
+          "HOSTNAME=$hostname" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "THUMBPRINT=$thumbprint" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "CUSTOMER_ID=$customerId" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Execute validation script
+        shell: pwsh
+        run: |
+          $scriptPath = "${{ env.SCRIPT_PATH }}"
+          
+          if (-not (Test-Path $scriptPath)) {
+              Write-Host "❌ Script not found: $scriptPath" -ForegroundColor Red
+              exit 1
+          }
+          
+          Write-Host "🔍 Starting Cloud Connector validation..." -ForegroundColor Cyan
+          Write-Host ""
+          
+          $startTime = Get-Date
+          
+          & "$scriptPath" `
+              -CloudConnectorHostname "${{ env.HOSTNAME }}" `
+              -CertificateThumbprint "${{ env.THUMBPRINT }}" `
+              -CitrixCustomerId "${{ env.CUSTOMER_ID }}" `
+              -CitrixApiKey "${{ secrets.CITRIX_API_KEY }}" `
+              -CitrixApiSecret "${{ secrets.CITRIX_API_SECRET }}" `
+              -LogPath "${{ env.LOG_DIR }}\validation-${{ github.run_id }}.log"
+          
+          $exitCode = $LASTEXITCODE
+          $endTime = Get-Date
+          $duration = $endTime - $startTime
+          
+          Write-Host ""
+          Write-Host "Validation completed in $($duration.TotalSeconds) seconds" -ForegroundColor Cyan
+          
+          exit $exitCode
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-logs
+          path: logs/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Post validation summary
+        if: always()
+        shell: pwsh
+        run: |
+          $logDir = "${{ env.LOG_DIR }}"
+          $logFiles = Get-ChildItem -Path $logDir -Filter "*.log" -ErrorAction SilentlyContinue
+          
+          if ($logFiles) {
+              $content = Get-Content -Path $logFiles[0].FullName -Raw
+              
+              # Extract summary section
+              $summaryMatch = $content -match "(?s)======================================.*?======================================"
+              if ($summaryMatch) {
+                  $summary = $matches[0]
+                  Write-Host "Validation Summary:" -ForegroundColor Cyan
+                  Write-Host $summary
+              }
+          }
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `❌ Cloud Connector validation failed!\n\nConnector: ${{ env.HOSTNAME }}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+            })
+
+  notify-slack:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    needs: validate-cloud-connector
+    if: always()
+    
+    steps:
+      - name: Send Slack notification
+        uses: 8398a7/action-slack@v3
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        with:
+          status: ${{ job.status }}
+          text: |
+            Citrix Cloud Connector Validation
+            Hostname: ${{ github.event.inputs.cloud_connector_hostname || secrets.DEFAULT_CLOUD_CONNECTOR_HOSTNAME }}
+            Result: ${{ job.status == 'success' && '✅ PASSED' || '❌ FAILED' }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        continue-on-error: true

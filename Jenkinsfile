@@ -57,15 +57,15 @@ pipeline {
                     
                     // Create necessary directories
                     powershell """
-                        $artifactDir = "${env:ARTIFACT_DIR}"
-                        $logDir = "${env:LOG_DIR}"
+                        \$artifactDir = "${env:ARTIFACT_DIR}"
+                        \$logDir = "${env:LOG_DIR}"
                         
-                        if (-not (Test-Path $artifactDir)) {
-                            New-Item -ItemType Directory -Path $artifactDir -Force | Out-Null
+                        if (-not (Test-Path \$artifactDir)) {
+                            New-Item -ItemType Directory -Path \$artifactDir -Force | Out-Null
                         }
                         
-                        if (-not (Test-Path $logDir)) {
-                            New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+                        if (-not (Test-Path \$logDir)) {
+                            New-Item -ItemType Directory -Path \$logDir -Force | Out-Null
                         }
                         
                         Write-Host "Directories created successfully"
@@ -89,7 +89,7 @@ pipeline {
                         }
                         
                         if ([string]::IsNullOrWhiteSpace("${params:CITRIX_CUSTOMER_ID}")) {
-                            $errors += "CITRIX_CUSTOMER_ID parameter is required"
+                            \$errors += "CITRIX_CUSTOMER_ID parameter is required"
                         }
                         
                         if (\$errors.Count -gt 0) {
@@ -131,10 +131,10 @@ pipeline {
                         def exitCode = powershell(
                             script: """
                                 \$scriptPath = "${env:SCRIPT_PATH}"
-                                $logDir = "${env:LOG_DIR}"
+                                \$logDir = "${env:LOG_DIR}"
                                 
                                 if (-not (Test-Path \$scriptPath)) {
-                                    Write-Host "ERROR: Script not found at $scriptPath" -ForegroundColor Red
+                                    Write-Host "ERROR: Script not found at \$scriptPath" -ForegroundColor Red
                                     exit 1
                                 }
                                 
@@ -149,13 +149,13 @@ pipeline {
                                     -CitrixCustomerId "${params:CITRIX_CUSTOMER_ID}" `
                                     -CitrixApiKey "\$env:CITRIX_API_KEY" `
                                     -CitrixApiSecret "\$env:CITRIX_API_SECRET" `
-                                    -LogPath "$logDir\\validation-${env:BUILD_NUMBER}.log"
+                                    -LogPath "\$logDir\\validation-${env:BUILD_NUMBER}.log"
                                 
-                                $endTime = Get-Date
-                                $duration = $endTime - $startTime
+                                \$endTime = Get-Date
+                                \$duration = \$endTime - \$startTime
                                 
                                 Write-Host ""
-                                Write-Host "Validation execution completed in \$($duration.TotalSeconds) seconds" -ForegroundColor Cyan
+                                Write-Host "Validation execution completed in \$(\$duration.TotalSeconds) seconds" -ForegroundColor Cyan
                                 
                                 exit \$LASTEXITCODE
                             """,
@@ -166,7 +166,7 @@ pipeline {
                             currentBuild.result = 'FAILURE'
                             error("Cloud Connector validation failed with exit code: ${exitCode}")
                         }
-                    }
+                    }   
                 }
             }
         }
@@ -174,20 +174,20 @@ pipeline {
         stage('Archive Logs') {
             steps {
                 script {
-                    powershell ""
+                    powershell """
                         \$logDir = "${env:LOG_DIR}"
                         \$artifactDir = "${env:ARTIFACT_DIR}"
                         
                         if (Test-Path \$logDir) {
                             \$logFiles = Get-ChildItem -Path \$logDir -Filter "*.log"
                             
-                            if ($logFiles.Count -gt 0) {
+                            if (\$logFiles.Count -gt 0) {
                                 Write-Host "Archiving \$(\$logFiles.Count) log file(s)..."
                                 Copy-Item -Path \$logDir\\* -Destination \$artifactDir -Force
                                 Write-Host "Logs archived to artifacts directory"
                             }
                         }
-                    ""
+                    """
                     
                     // Archive artifacts
                     archiveArtifacts(

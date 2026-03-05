@@ -213,8 +213,8 @@ pipeline {
                         Get-ChildItem -Path $logDir -Filter "*.log" | ForEach-Object {
                             $content = Get-Content -Path $_.FullName -Raw
                             # Remove sensitive patterns (basic sanitization)
-                            $content = $content -replace 'Bearer\s+[A-Za-z0-9\-\._~\+\/]+=*', 'Bearer [REDACTED]'
-                            $content = $content -replace 'token[''"]?\s*:\s*[''"]([^''"]*)[''\"]', 'token: [REDACTED]'
+                            $content = $content -replace 'Bearer\\s+[A-Za-z0-9\\-\\._~\\+\\/]+=*', 'Bearer [REDACTED]'
+                            $content = $content -replace 'token[''"]?\\s*:\\s*[''"]([^''"]*)[''\"]', 'token: [REDACTED]'
                             Set-Content -Path $_.FullName -Value $content -NoNewline
                         }
                     }

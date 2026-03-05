@@ -260,12 +260,5 @@ pipeline {
                 echo "Pipeline is unstable - check logs for warnings"
             }
         }
-
-        cleanup {
-            script {
-                // Optional: Clean workspace if needed
-                // cleanWs()
-            }
-        }
     }
 }

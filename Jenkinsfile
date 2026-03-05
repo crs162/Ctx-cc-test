@@ -56,7 +56,7 @@ pipeline {
                     echo "Build URL: ${env.BUILD_URL}"
                     
                     // Create necessary directories
-                    powershell '''
+                    powershell """
                         $artifactDir = "${env:ARTIFACT_DIR}"
                         $logDir = "${env:LOG_DIR}"
                         
@@ -69,7 +69,7 @@ pipeline {
                         }
                         
                         Write-Host "Directories created successfully"
-                    '''
+                    """
                 }
             }
         }
@@ -77,29 +77,29 @@ pipeline {
         stage('Validate Parameters') {
             steps {
                 script {
-                    powershell '''
-                        $errors = @()
+                    powershell """
+                        \$errors = @()
                         
                         if ([string]::IsNullOrWhiteSpace("${params:CLOUD_CONNECTOR_HOSTNAME}")) {
-                            $errors += "CLOUD_CONNECTOR_HOSTNAME parameter is required"
+                            \$errors += "CLOUD_CONNECTOR_HOSTNAME parameter is required"
                         }
                         
                         if ([string]::IsNullOrWhiteSpace("${params:CERTIFICATE_THUMBPRINT}")) {
-                            $errors += "CERTIFICATE_THUMBPRINT parameter is required"
+                            \$errors += "CERTIFICATE_THUMBPRINT parameter is required"
                         }
                         
                         if ([string]::IsNullOrWhiteSpace("${params:CITRIX_CUSTOMER_ID}")) {
                             $errors += "CITRIX_CUSTOMER_ID parameter is required"
                         }
                         
-                        if ($errors.Count -gt 0) {
+                        if (\$errors.Count -gt 0) {
                             Write-Host "Parameter Validation Failed:" -ForegroundColor Red
-                            $errors | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+                            \$errors | ForEach-Object { Write-Host "  - \$_" -ForegroundColor Red }
                             exit 1
                         }
                         
                         Write-Host "All required parameters provided" -ForegroundColor Green
-                    '''
+                    """
                 }
             }
         }
@@ -129,11 +129,11 @@ pipeline {
                         passwordVariable: 'CITRIX_API_SECRET'
                     )]) {
                         def exitCode = powershell(
-                            script: '''
-                                $scriptPath = "${env:SCRIPT_PATH}"
+                            script: """
+                                \$scriptPath = "${env:SCRIPT_PATH}"
                                 $logDir = "${env:LOG_DIR}"
                                 
-                                if (-not (Test-Path $scriptPath)) {
+                                if (-not (Test-Path \$scriptPath)) {
                                     Write-Host "ERROR: Script not found at $scriptPath" -ForegroundColor Red
                                     exit 1
                                 }
@@ -141,24 +141,24 @@ pipeline {
                                 Write-Host "Executing validation script..." -ForegroundColor Cyan
                                 Write-Host ""
                                 
-                                $startTime = Get-Date
+                                \$startTime = Get-Date
                                 
-                                & "$scriptPath" `
+                                & "\$scriptPath" `
                                     -CloudConnectorHostname "${params:CLOUD_CONNECTOR_HOSTNAME}" `
                                     -CertificateThumbprint "${params:CERTIFICATE_THUMBPRINT}" `
                                     -CitrixCustomerId "${params:CITRIX_CUSTOMER_ID}" `
-                                    -CitrixApiKey "$env:CITRIX_API_KEY" `
-                                    -CitrixApiSecret "$env:CITRIX_API_SECRET" `
+                                    -CitrixApiKey "\$env:CITRIX_API_KEY" `
+                                    -CitrixApiSecret "\$env:CITRIX_API_SECRET" `
                                     -LogPath "$logDir\\validation-${env:BUILD_NUMBER}.log"
                                 
                                 $endTime = Get-Date
                                 $duration = $endTime - $startTime
                                 
                                 Write-Host ""
-                                Write-Host "Validation execution completed in $($duration.TotalSeconds) seconds" -ForegroundColor Cyan
+                                Write-Host "Validation execution completed in \$($duration.TotalSeconds) seconds" -ForegroundColor Cyan
                                 
-                                exit $LASTEXITCODE
-                            ''',
+                                exit \$LASTEXITCODE
+                            """,
                             returnStatus: true
                         )
                         
@@ -174,20 +174,20 @@ pipeline {
         stage('Archive Logs') {
             steps {
                 script {
-                    powershell '''
-                        $logDir = "${env:LOG_DIR}"
-                        $artifactDir = "${env:ARTIFACT_DIR}"
+                    powershell ""
+                        \$logDir = "${env:LOG_DIR}"
+                        \$artifactDir = "${env:ARTIFACT_DIR}"
                         
-                        if (Test-Path $logDir) {
-                            $logFiles = Get-ChildItem -Path $logDir -Filter "*.log"
+                        if (Test-Path \$logDir) {
+                            \$logFiles = Get-ChildItem -Path \$logDir -Filter "*.log"
                             
                             if ($logFiles.Count -gt 0) {
-                                Write-Host "Archiving $($logFiles.Count) log file(s)..."
-                                Copy-Item -Path $logDir\\* -Destination $artifactDir -Force
+                                Write-Host "Archiving \$(\$logFiles.Count) log file(s)..."
+                                Copy-Item -Path \$logDir\\* -Destination \$artifactDir -Force
                                 Write-Host "Logs archived to artifacts directory"
                             }
                         }
-                    '''
+                    ""
                     
                     // Archive artifacts
                     archiveArtifacts(
@@ -206,19 +206,19 @@ pipeline {
                 echo "Pipeline execution completed"
                 
                 // Clean up sensitive data from logs
-                powershell '''
-                    $logDir = "${env:LOG_DIR}"
+                powershell """
+                    \$logDir = "${env:LOG_DIR}"
                     
-                    if (Test-Path $logDir) {
-                        Get-ChildItem -Path $logDir -Filter "*.log" | ForEach-Object {
-                            $content = Get-Content -Path $_.FullName -Raw
+                    if (Test-Path \$logDir) {
+                        Get-ChildItem -Path \$logDir -Filter "*.log" | ForEach-Object {
+                            \$content = Get-Content -Path \$_.FullName -Raw
                             # Remove sensitive patterns (basic sanitization)
-                            $content = $content -replace 'Bearer\\s+[A-Za-z0-9\\-\\._~\\+\\/]+=*', 'Bearer [REDACTED]'
-                            $content = $content -replace 'token[''"]?\\s*:\\s*[''"]([^''"]*)[''\"]', 'token: [REDACTED]'
-                            Set-Content -Path $_.FullName -Value $content -NoNewline
+                            \$content = \$content -replace 'Bearer\\s+[A-Za-z0-9\\-\\._~\\+\\/]+=*', 'Bearer [REDACTED]'
+                            \$content = \$content -replace 'token[''"]?\\s*:\\s*[''"]([^''"]*)[''\"]', 'token: [REDACTED]'
+                            Set-Content -Path \$_.FullName -Value \$content -NoNewline
                         }
                     }
-                '''
+                """
             }
         }
 

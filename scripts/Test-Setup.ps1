@@ -159,7 +159,7 @@ try {
 
 # Test internet connectivity
 try {
-    $webTest = Invoke-WebRequest -Uri "https://api.cloud.com/citrix.cloud" -Method Get -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop -WarningAction SilentlyContinue
+    $webTest = Invoke-WebRequest -Uri "https://api.cloud.com/" -Method Get -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop -WarningAction SilentlyContinue
     Write-Check "Citrix API Endpoint" "PASS" "HTTP response received"
 } catch {
     # 404 or other response is fine - means endpoint is reachable

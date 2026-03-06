@@ -24,7 +24,7 @@ A production-ready Jenkins pipeline that:
 ### For PowerShell Script Execution
 - Windows Server 2022 (or compatible PowerShell 5.0+ environment)
 - PowerShell 5.0 or later
-- Network connectivity to `api.citrixcloud.com`
+- Network connectivity to `api.cloud.com`
 - Valid Citrix Cloud service principal credentials (API Key and Secret)
 
 ### For Jenkins Execution
@@ -173,7 +173,7 @@ The script returns structured information that can be:
 
 ### API Request Timeouts
 - Script will retry 3 times with 5-second delays
-- If still failing: Check network connectivity to `api.citrixcloud.com`, verify firewall rules
+- If still failing: Check network connectivity to `api.cloud.com`, verify firewall rules
 
 ### PowerShell Execution Policy
 If execution is blocked:

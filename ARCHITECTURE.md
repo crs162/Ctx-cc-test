@@ -62,7 +62,7 @@ The Citrix Cloud Connector Validation Suite is a distributed validation system d
 
 **Dependencies**:
 - PowerShell 5.0+ (built-in cmdlets)
-- Network connectivity to api.citrixcloud.com:443
+- Network connectivity to api.cloud.com:443
 - Valid Citrix Cloud credentials
 
 ### 2. CI/CD Orchestration Layer
@@ -258,7 +258,7 @@ GitHub Actions:
 - HTTPS only (enforced in URLs)
 - TLS 1.2+ (automatic via modern PowerShell)
 - Certificate validation enabled (default behavior)
-- Firewall rules limit to api.citrixcloud.com:443
+- Firewall rules limit to api.cloud.com:443
 
 ### Audit Trail
 - Timestamped logs for all operations

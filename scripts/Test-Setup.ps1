@@ -139,15 +139,15 @@ Write-Host "🌐 Network Connectivity" -ForegroundColor Cyan
 
 # Test DNS resolution
 try {
-    $dnsResult = Resolve-DnsName -Name "api.citrixcloud.com" -ErrorAction Stop -QuickTimeout
-    Write-Check "DNS Resolution" "PASS" "api.citrixcloud.com resolves to $($dnsResult.IPAddress[0])"
+    $dnsResult = Resolve-DnsName -Name "api.cloud.com" -ErrorAction Stop -QuickTimeout
+    Write-Check "DNS Resolution" "PASS" "api.cloud.com resolves to $($dnsResult.IPAddress[0])"
 } catch {
-    Write-Check "DNS Resolution" "FAIL" "Cannot resolve api.citrixcloud.com"
+    Write-Check "DNS Resolution" "FAIL" "Cannot resolve api.cloud.com"
 }
 
 # Test network connectivity to Citrix Cloud
 try {
-    $tcpTest = Test-NetConnection -ComputerName "api.citrixcloud.com" -Port 443 -WarningAction SilentlyContinue
+    $tcpTest = Test-NetConnection -ComputerName "api.cloud.com" -Port 443 -WarningAction SilentlyContinue
     if ($tcpTest.TcpTestSucceeded) {
         Write-Check "HTTPS Connectivity" "PASS" "Port 443 is reachable"
     } else {
@@ -159,7 +159,7 @@ try {
 
 # Test internet connectivity
 try {
-    $webTest = Invoke-WebRequest -Uri "https://api.citrixcloud.com/healthcheck" -Method Get -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop -WarningAction SilentlyContinue
+    $webTest = Invoke-WebRequest -Uri "https://api.cloud.com/citrix.cloud" -Method Get -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop -WarningAction SilentlyContinue
     Write-Check "Citrix API Endpoint" "PASS" "HTTP response received"
 } catch {
     # 404 or other response is fine - means endpoint is reachable

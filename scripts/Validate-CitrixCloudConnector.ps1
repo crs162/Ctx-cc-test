@@ -170,19 +170,18 @@ function Get-CitrixApiToken {
     Write-Log "Requesting API token from Citrix Cloud..." "Information"
 
     $authBody = @{
-        client_id     = $ApiKey
-        client_secret = $ApiSecret
+        clientId     = $ApiKey
+        clientSecret = $ApiSecret
     } | ConvertTo-Json
 
     $authHeaders = @{
         "Content-Type"  = "application/json"
         "Accept"        = "application/json"
-        "Citrix-CustomerId" = $CustomerId
     }
 
     try {
         $tokenResponse = Invoke-RestMethod `
-            -Uri "$CitrixAuthUri/citrixcloud/token" `
+            -Uri "$CitrixAuthUri/citrix.cloud/tokens/clients" `
             -Method Post `
             -Body $authBody `
             -Headers $authHeaders `
@@ -223,7 +222,7 @@ function Test-CloudConnectorHealth {
 
     try {
         # Get the list of Cloud Connectors
-        $connectorUri = "$CitrixApiBaseUri/cloudconnectors"
+        $connectorUri = "$CitrixApiBaseUri/citrix.cloud/cloudconnectors"
         $connectors = Invoke-CitrixApiRequest -Uri $connectorUri -Headers $headers
 
         if (-not $connectors -or -not $connectors.items) {
@@ -240,7 +239,7 @@ function Test-CloudConnectorHealth {
         Write-Log "Cloud Connector found: $($targetConnector.name) (ID: $($targetConnector.id))" "Information"
 
         # Initiate health check
-        $healthCheckUri = "$CitrixApiBaseUri/cloudconnectors/$($targetConnector.id)/healthcheck"
+        $healthCheckUri = "$CitrixApiBaseUri/citrix.cloud/cloudconnectors/$($targetConnector.id)/healthcheck"
         $healthCheck = Invoke-CitrixApiRequest -Uri $healthCheckUri -Method Post -Headers $headers
 
         Write-Log "Health check initiated, checking status..." "Information"
@@ -249,7 +248,7 @@ function Test-CloudConnectorHealth {
         Start-Sleep -Seconds 3
 
         # Retrieve health check results
-        $healthStatusUri = "$CitrixApiBaseUri/cloudconnectors/$($targetConnector.id)"
+        $healthStatusUri = "$CitrixApiBaseUri/citrix.cloud/cloudconnectors/$($targetConnector.id)"
         $healthStatus = Invoke-CitrixApiRequest -Uri $healthStatusUri -Headers $headers
 
         return @{
@@ -293,7 +292,7 @@ function Get-CloudConnectorCertificate {
 
     try {
         # Get connectors to find the target
-        $connectorUri = "$CitrixApiBaseUri/cloudconnectors"
+        $connectorUri = "$CitrixApiBaseUri/citrix.cloud/cloudconnectors"
         $connectors = Invoke-CitrixApiRequest -Uri $connectorUri -Headers $headers
 
         $targetConnector = $connectors.items | Where-Object { $_.hostname -eq $Hostname }

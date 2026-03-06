@@ -68,8 +68,8 @@ param(
 # ========================
 # Configuration
 # ========================
-$CitrixApiBaseUri = "https://api.citrixcloud.com"
-$CitrixAuthUri = "https://api.citrixcloud.com"
+$CitrixApiBaseUri = "https://api.cloud.com"
+$CitrixAuthUri = "https://api.cloud.com"
 $MaxRetries = 3
 $RetryDelaySeconds = 5
 

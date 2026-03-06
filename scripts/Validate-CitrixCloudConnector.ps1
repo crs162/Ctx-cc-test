@@ -170,13 +170,13 @@ function Get-CitrixApiToken {
     Write-Log "Requesting API token from Citrix Cloud..." "Information"
 
     $authBody = @{
-        client_id     = $ApiKey
-        client_secret = $ApiSecret
+        ClientId     = $ApiKey
+        ClientSecret = $ApiSecret
     } | ConvertTo-Json
 
     $authHeaders = @{
-        "Content-Type"  = "application/json"
-        "Accept"        = "application/json"
+        "Content-Type"      = "application/json"
+        "Accept"            = "application/json"
         "Citrix-CustomerId" = $CustomerId
     }
 

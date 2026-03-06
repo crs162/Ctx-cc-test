@@ -222,7 +222,8 @@ function Test-CloudConnectorHealth {
     }
 
     try {
-        # Get the list of Cloud Connectors
+        # Get the list of Cloud Connectors with updated authorization format
+        $headers["Authorization"] = "CwsAuth Bearer=$Token"
         $connectorUri = "$CitrixApiBaseUri/cloudconnectors"
         $connectors = Invoke-CitrixApiRequest -Uri $connectorUri -Headers $headers
 
@@ -292,7 +293,8 @@ function Get-CloudConnectorCertificate {
     }
 
     try {
-        # Get connectors to find the target
+        # Get connectors to find the target with updated authorization format
+        $headers["Authorization"] = "CwsAuth Bearer=$Token"
         $connectorUri = "$CitrixApiBaseUri/cloudconnectors"
         $connectors = Invoke-CitrixApiRequest -Uri $connectorUri -Headers $headers
 

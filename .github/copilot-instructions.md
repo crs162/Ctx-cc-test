@@ -12,7 +12,7 @@ This is a PowerShell-based validation suite for Citrix Cloud Connector health ch
 
 ### Authentication Flow
 1. Script receives API Key and Secret as parameters
-2. Sends POST request to `https://api.cloud.com/citrix.cloud/tokens/clients` with correct authentication format
+2. Sends POST request to `https://trust.citrixworkspacesapi.net/root/tokens/clients` with Customer ID header
 3. Receives Bearer token in response
 4. All subsequent API calls use `Authorization: Bearer $token` header with Customer ID
 
@@ -110,10 +110,10 @@ This is a PowerShell-based validation suite for Citrix Cloud Connector health ch
 ## Critical Integration Points
 
 ### Citrix Cloud API Dependencies
-- **Endpoint stability**: `api.cloud.com` is the canonical endpoint (no failovers)
+- **Endpoint stability**: `api.cloud.com` and `trust.citrixworkspacesapi.net` are the canonical endpoints (no failovers)
 - **Token validity**: Tokens expire; implement refresh logic if validations exceed token TTL
 - **Rate limiting**: API has rate limits; script implements backoff (5-second delays)
-- **Network requirements**: TLS 1.2+, firewall must allow outbound to api.cloud.com:443
+- **Network requirements**: TLS 1.2+, firewall must allow outbound to api.cloud.com:443 and trust.citrixworkspacesapi.net:443
 
 ### Jenkins Integration Requirements
 - **Windows Agent**: Must be Windows Server 2022 (or compatible) with PowerShell 5.0+
@@ -167,7 +167,7 @@ This is a PowerShell-based validation suite for Citrix Cloud Connector health ch
 
 - **Execution time**: ~5-10 seconds under normal conditions (includes initial auth)
 - **API calls**: ~3-4 REST calls (auth + connector list + health check + certificate)
-- **Network**: Single TCP connection to api.cloud.com
+- **Network**: TCP connections to api.cloud.com and trust.citrixworkspacesapi.net
 - **Memory**: <100MB PowerShell process
 - **Timeout**: Script has 30-minute timeout in Jenkins (configurable)
 

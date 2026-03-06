@@ -10,7 +10,7 @@ $PSVersionTable.PSVersion
 # Should be 5.0 or higher
 
 # Check network connectivity to Citrix Cloud
-Test-NetConnection -ComputerName api.cloud.com -Port 443
+Test-NetConnection -ComputerName trust.citrixworkspacesapi.net -Port 443
 # Should return TcpTestSucceeded: True
 ```
 
@@ -102,7 +102,7 @@ Exit code: 1
 | `Cloud Connector with hostname '...' not found` | Check exact hostname in Citrix Cloud console |
 | `Certificate thumbprint does not match` | Get current thumbprint from Cloud Connector and update parameter |
 | `PowerShell execution policy error` | Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` |
-| `API request timeout` | Check network connectivity to `api.cloud.com` |
+| `API request timeout` | Check network connectivity to `api.cloud.com` and `trust.citrixworkspacesapi.net` |
 
 ## Next Steps
 
